@@ -135,9 +135,7 @@ public class EnemyController : MonoBehaviour
 
     // TODO: Implement when sound is being created
     private bool CanHearPlayer()
-    {
-        return false;
-    }
+        => false;
     
     private bool IsOnLedge(int lookingDirection)
     {
@@ -158,9 +156,7 @@ public class EnemyController : MonoBehaviour
     }
 
     private void StopMoving()
-    {
-        _rigidbody.velocity = new Vector2(0, _rigidbody.velocity.y);
-    }
+        =>  _rigidbody.velocity = new Vector2(0, _rigidbody.velocity.y);
 
     private int DirectionTowardsPlayer
         => (int)Mathf.Sign(_player.transform.position.x - transform.position.x);
