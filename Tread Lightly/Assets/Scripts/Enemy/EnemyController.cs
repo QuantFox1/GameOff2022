@@ -42,6 +42,7 @@ public class EnemyController : MonoBehaviour
 
     #region Behaviours
 
+    // Behaviours will return true if they have triggered a change in state
     private bool RunBehaviour() => _state switch
     {
         EnemyState.Sleeping => RunSleepingBehaviour(),
@@ -103,9 +104,7 @@ public class EnemyController : MonoBehaviour
     }
 
     private void WakeUp()
-    {
-        _state = EnemyState.Chasing;
-    }
+        => _state = EnemyState.Chasing;
     
     private void Search()
     {
@@ -134,6 +133,7 @@ public class EnemyController : MonoBehaviour
         return !hit;
     }
 
+    // TODO: Implement when sound is being created
     private bool CanHearPlayer()
     {
         return false;
