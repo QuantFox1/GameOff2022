@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody2D))]
 public class EnemyController : MonoBehaviour
 {
     [SerializeField] private float _chaseSpeed;
@@ -104,7 +105,7 @@ public class EnemyController : MonoBehaviour
     }
 
     private void WakeUp()
-        => _state = EnemyState.Chasing;
+        => _state = CanSeePlayer() ? EnemyState.Chasing : EnemyState.Searching;
     
     private void Search()
     {
@@ -133,9 +134,8 @@ public class EnemyController : MonoBehaviour
         return !hit;
     }
 
-    // TODO: Implement when sound is being created
     private bool CanHearPlayer()
-        => false;
+        => SoundEmitter.CanListenerHearASound(transform.position);
     
     private bool IsOnLedge(int lookingDirection)
     {
