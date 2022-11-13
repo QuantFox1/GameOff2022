@@ -10,13 +10,22 @@ public class CharacterController2D : MonoBehaviour
     [SerializeField] private float _jumpForce;
     [SerializeField] private float _gravityScale;
 
+    [Header("Ladder settings")]
+    [SerializeField] private float _ladderClimbSpeed;
+    [SerializeField] private float _ladderDropSpeed;
+    [SerializeField] private float _ladderMoveSpeed;
+
     [Header("Camera settings")]
     [SerializeField] private Camera _mainCamera;
     [SerializeField] private float _cameraMovementSpeed;
     [SerializeField] private Vector2 _cameraOffset;
 
+    [Header("Debug values")]
+    [SerializeField] private bool _isGrounded = false;
+    [SerializeField] private bool _isOnLadder = false;
+    [SerializeField] private bool _isClimbingLadder = false;
+
     private bool _facingRight = true;
-    private bool _isGrounded = false;
     private float _moveDirection = 0;
 
     private Rigidbody2D _rigidbody;
@@ -40,25 +49,27 @@ public class CharacterController2D : MonoBehaviour
         UpdateFacingDirection();
 
         HandleJump();
+        HandleLadderClimbing();
 
         MoveCamera();
     }
 
     void FixedUpdate()
     {
+        UpdateIsOnLadder();
         UpdateIsGrounded();
         UpdateVelocity();
     }
 
     private void UpdateMoveDirection()
     {
-        if ((IsLeftKeyPressed || IsRightKeyPressed) && (_isGrounded || Mathf.Abs(_rigidbody.velocity.x) > 0.01f))
+        if (IsLeftKeyPressed || IsRightKeyPressed)
         {
             _moveDirection = IsLeftKeyPressed ? -1 : 1;
             return;
         }
 
-        if (_isGrounded || _rigidbody.velocity.magnitude < 0.01f)
+        if (_isGrounded || _isOnLadder || _rigidbody.velocity.magnitude < 0.01f)
         {
             _moveDirection = 0;
         }
@@ -117,13 +128,63 @@ public class CharacterController2D : MonoBehaviour
         var colliderRadius = _collider.radius * 0.4f * Mathf.Abs(transform.localScale.x);
         var groundCheckPosition = colliderBounds.min + new Vector3(colliderBounds.size.x * 0.5f, colliderRadius * 0.9f, 0);
 
-        var colliders = Physics2D.OverlapCircleAll(groundCheckPosition, colliderRadius);
+        var colliders = Physics2D.OverlapCircleAll(groundCheckPosition, colliderRadius, LayerMask.GetMask("Terrain"));
 
         _isGrounded = colliders.Where(collider => collider != _collider).Any();
     }
 
+    private void UpdateIsOnLadder()
+    {
+        var colliderBounds = _collider.bounds;
+        var colliderRadius = _collider.radius * 0.4f * Mathf.Abs(transform.localScale.x);
+        var groundCheckPosition = colliderBounds.min + new Vector3(colliderBounds.size.x * 0.5f, colliderRadius * 0.9f, 0);
+
+        var colliders = Physics2D.OverlapCircleAll(groundCheckPosition, colliderRadius, LayerMask.GetMask("Ladder"));
+
+        _isOnLadder = colliders.Any();
+    }
+
     private void UpdateVelocity() 
-        => _rigidbody.velocity = new Vector2(_moveDirection * _maxSpeed, _rigidbody.velocity.y);
+        => _rigidbody.velocity = new Vector2(CalculateHorizontalVelocity(), CalculateVerticalVelocity());
+
+    private float CalculateHorizontalVelocity()
+    {
+        if (_isOnLadder && !_isGrounded)
+        {
+            return _moveDirection * _ladderMoveSpeed;
+        }
+
+        return _moveDirection * _maxSpeed;
+    }
+
+    private float CalculateVerticalVelocity()
+    {
+        if (_isOnLadder)
+        {
+            if (_isClimbingLadder)
+            {
+                return _ladderClimbSpeed;
+            }
+            return -_ladderDropSpeed;
+        }
+        return _rigidbody.velocity.y;
+    }
+
+    private void HandleLadderClimbing()
+    {
+        if (!_isOnLadder && _isClimbingLadder)
+        {
+            _isClimbingLadder = false;
+        }
+
+        if (!_isOnLadder)
+        {
+            return;
+        }
+
+        _isClimbingLadder = IsJumpKeyHeld;
+    }
+
 
     private bool IsLeftKeyPressed
         => Input.GetKey(KeyCode.A);
@@ -132,5 +193,8 @@ public class CharacterController2D : MonoBehaviour
         => Input.GetKey(KeyCode.D);
 
     private bool IsJumpKeyPressed
+        => Input.GetKeyDown(KeyCode.W);
+
+    private bool IsJumpKeyHeld
         => Input.GetKey(KeyCode.W);
 }
