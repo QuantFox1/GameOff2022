@@ -28,7 +28,11 @@ public class SoundEmitter : MonoBehaviour
         }
 
         _currentLoudestSound = Mathf.Min(_sounds.Max(sound => sound.CurrentVolume), _maxVolume) / _maxVolume;
-        _soundLevelSlider.value = Mathf.Lerp(_soundLevelSlider.value, _currentLoudestSound, Time.deltaTime * 10);
+
+        if (_soundLevelSlider != null)
+        {
+            _soundLevelSlider.value = Mathf.Lerp(_soundLevelSlider.value, _currentLoudestSound, Time.deltaTime * 10);
+        }
     }
 
     public void MakeSound(Sound soundCreated, bool removeOthersOfSameType=false)
