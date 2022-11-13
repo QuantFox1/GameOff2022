@@ -6,7 +6,8 @@ using UnityEngine;
 public class CharacterController2D : MonoBehaviour
 {
     [Header("Movement settings")]
-    [SerializeField] private float _maxSpeed;
+    [SerializeField] private float _walkingSpeed;
+    [SerializeField] private float _sprintingSpeed;
     [SerializeField] private float _jumpForce;
     [SerializeField] private float _gravityScale;
 
@@ -23,6 +24,7 @@ public class CharacterController2D : MonoBehaviour
     [Header("Debug values")]
     [SerializeField] private bool _isGrounded = false;
     [SerializeField] private bool _isOnLadder = false;
+    [SerializeField] private bool _isSprinting = false;
     [SerializeField] private bool _isClimbingLadder = false;
 
     private bool _facingRight = true;
@@ -30,11 +32,13 @@ public class CharacterController2D : MonoBehaviour
 
     private Rigidbody2D _rigidbody;
     private CircleCollider2D _collider;
+    private SoundController _soundController;
 
     void Start()
     {
         _rigidbody = GetComponent<Rigidbody2D>();
         _collider = GetComponent<CircleCollider2D>();
+        _soundController = GetComponent<SoundController>();
 
         _rigidbody.freezeRotation = true;
         _rigidbody.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
@@ -48,10 +52,14 @@ public class CharacterController2D : MonoBehaviour
         UpdateMoveDirection();
         UpdateFacingDirection();
 
+        UpdateIsSprinting();
+
         HandleJump();
         HandleLadderClimbing();
 
         MoveCamera();
+
+        HandleSounds();
     }
 
     void FixedUpdate()
@@ -144,6 +152,9 @@ public class CharacterController2D : MonoBehaviour
         _isOnLadder = colliders.Any();
     }
 
+    private void UpdateIsSprinting()
+        => _isSprinting = IsSprintKeyHeld;
+
     private void UpdateVelocity() 
         => _rigidbody.velocity = new Vector2(CalculateHorizontalVelocity(), CalculateVerticalVelocity());
 
@@ -154,7 +165,8 @@ public class CharacterController2D : MonoBehaviour
             return _moveDirection * _ladderMoveSpeed;
         }
 
-        return _moveDirection * _maxSpeed;
+        var movementSpeed = _isSprinting ? _sprintingSpeed : _walkingSpeed;
+        return _moveDirection * movementSpeed;
     }
 
     private float CalculateVerticalVelocity()
@@ -185,6 +197,22 @@ public class CharacterController2D : MonoBehaviour
         _isClimbingLadder = IsJumpKeyHeld;
     }
 
+    private void HandleSounds()
+    {
+        if (_moveDirection == 0 || !_isGrounded)
+        {
+            _soundController.ClearSoundSource();
+            return;
+        }
+
+        if (_isSprinting)
+        {
+            _soundController.SetSoundSource(SoundSource.Running, emitOnce: false);
+            return;
+        }
+
+        _soundController.SetSoundSource(SoundSource.Walking, emitOnce: false);
+    }
 
     private bool IsLeftKeyPressed
         => Input.GetKey(KeyCode.A);
@@ -197,4 +225,7 @@ public class CharacterController2D : MonoBehaviour
 
     private bool IsJumpKeyHeld
         => Input.GetKey(KeyCode.W);
+
+    private bool IsSprintKeyHeld
+        => Input.GetKey(KeyCode.LeftControl);
 }
